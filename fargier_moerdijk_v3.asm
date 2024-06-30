@@ -53,17 +53,16 @@ section .text
     mov eax, message ; Appel de la fonction _display pour afficher les messages
     call _display ; eax contient la chaîne qui va être utilisé par print_string
 
-    push entree_buffer
+    mov eax, entree_buffer
     call _read_string
 
     cmp eax, 0 ; _readString renvoie 0 dans le registre eax en cas de réussite sinon elle renvoie 1
     jne exit_start
     
-    push entree_buffer
+    mov eax, entree_buffer
     call _invert_string
-
-    push mot_de_passe ;2 argument
-    push entree_buffer ;1 argument
+    mov eax, entree_buffer
+    mov edx, mot_de_passe
     call _check_password
     
     ; Bloc d'instructions pour sortir du programme
@@ -122,9 +121,11 @@ section .text
     push ebp
     mov ebp, esp
 
+    mov esi, eax
+
     mov eax, READ_CALL
     mov ebx, STDIN
-    mov ecx, [ebp+8]
+    mov ecx, esi
     mov edx, taille_max_chaine
     int SYS_CALL
 
@@ -134,11 +135,12 @@ section .text
     jb error_too_short
 
     dec eax
-    mov esi, [ebp+8]
     mov BYTE [esi + eax], 0
 
     mov eax, 0 ; Si _readString réussit elle renvoie 0
     mov ecx, 0
+
+    lea esi, [esi] ; Charge la chaîne dans entree_buffer dans le registre esi
 
     ; Boucle qui itère sur la chaîne de caracteres
     ; Elle s'arrete quand elle rencontre le caracteres de retour à la ligne
@@ -178,27 +180,28 @@ section .text
       mov esp, ebp
       pop ebp
 
-      ret 8
+      ret
 
   _check_password:
       push ebp
       mov ebp, esp
-      
-      mov esi, [ebp+8]
-      mov edi, [ebp+12]
+
       mov ecx, 4
       loop_check_pwd:
-        push esi
-        push edi
+        push ecx
+        push edx
+        push eax
         call _check_equal
         cmp eax, 0
         je right_pwd
-        push ecx
-        push esi ;entree_buffer
+        pop eax
+        push eax
         call _read_string
-        push ecx
-        push esi ;entree_buffer
+        pop eax
         call _invert_string
+        ;pop esi
+        ;pop edi
+        pop edx
         pop ecx
 
         loop loop_check_pwd
@@ -216,26 +219,26 @@ section .text
         mov esp, ebp
         pop ebp
 
-        ret 12
+        ret
 
   _check_equal:
     push ebp
     mov ebp, esp
 
-    mov esi, [ebp+8]
-    mov edi, [ebp+12]
+    lea esi, [eax]
+    lea edi, [edx]
 
     loop:
       mov dl, [esi]
-      mov al, [edi]
+      mov bl, [edi]
 
       inc esi
       inc edi
 
-      cmp dl, al
+      cmp dl, bl
       jne char_not_equal
 
-      cmp al, 0
+      cmp bl, 0
       jne loop
 
     mov eax, 0
@@ -256,16 +259,15 @@ section .text
   _invert_string:
     push ebp
     mov ebp, esp
-    push entree_buffer
+
     call _size_of_string
     
     dec ecx
-    mov esi, [ebp+8]
     mov edi, 0
-    mov dl, BYTE [esi + ecx]
-    mov al, BYTE [esi + edi]
-    mov BYTE [esi + edi], dl
-    mov BYTE [esi + ecx], al
+    mov dl, BYTE [eax + ecx]
+    mov bl, BYTE [eax + edi]
+    mov BYTE [eax + edi], dl
+    mov BYTE [eax + ecx], bl
 
     loop_invert:
       inc edi
@@ -274,23 +276,23 @@ section .text
       je exit_invert_string
       cmp ecx, edi
       jb exit_invert_string
-      mov dl, BYTE [esi + ecx]
-      mov al, BYTE [esi + edi]
-      mov BYTE [esi + edi], dl
-      mov BYTE [esi + ecx], al
+      mov dl, BYTE [eax + ecx]
+      mov bl, BYTE [eax + edi]
+      mov BYTE [eax + edi], dl
+      mov BYTE [eax + ecx], bl
       jmp loop_invert
 
     exit_invert_string:
       mov esp, ebp
       pop ebp
 
-      ret 12
+      ret
 
   _size_of_string:
     push ebp
     mov ebp, esp
     
-    mov esi, [ebp+8]
+    lea esi, [eax]
     mov ecx, 0
 
     loop_size:
@@ -305,4 +307,4 @@ section .text
     mov esp, ebp
     pop ebp
 
-    ret 8
+    ret

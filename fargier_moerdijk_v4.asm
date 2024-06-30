@@ -62,12 +62,16 @@ section .text
     mov eax, message ; Appel de la fonction _display pour afficher les messages
     call _display ; eax contient la chaîne qui va être utilisé par print_string
 
-    call _readString
+    mov eax, entree_buffer
+    call _read_string
 
     cmp eax, 0 ; _readString renvoie 0 dans le registre eax en cas de réussite sinon elle renvoie 1
     jne exit_start
     
+    mov eax, entree_buffer
     call _invert_string
+    mov eax, entree_buffer
+    mov edx, mot_de_passe
     call _check_password
     
     ; Bloc d'instructions pour sortir du programme
@@ -92,14 +96,16 @@ section .text
     push ebp
     mov ebp, esp
 
-    cmp dl, 41 ; 41 représente un A en ASCII
+    mov eax, 0
+
+    cmp dl, 0x41 ; 41 représente un A en ASCII
     jb error_special_char ; Si le caractere entree est inférieur à 41 ce n'est pas une lettre
     cmp dl, 0x5a ; 0x5a représente Z en ASCII
     ja check_min_maj ; jump pour vérifier si le caractere est dans les miniscules
     jmp continue
 
     check_min_maj:
-      cmp dl, 61 ; 61 représente a en ASCII
+      cmp dl, 0x61 ; 61 représente a en ASCII
       jb error_special_char ; Si le caractere est ni dans les majuscules ni dans les miniscules alors ce n'est pas une lettre
       jmp continue
 
@@ -115,19 +121,20 @@ section .text
       jmp exit_check_spe_char
 
     exit_check_spe_char:
-      mov eax, 0 ; _check_special_char renvoie 0 dans eax en cas de réussite
       mov esp, ebp
       pop ebp
 
       ret
 
-  _readString:
+  _read_string:
     push ebp
     mov ebp, esp
 
+    mov esi, eax
+
     mov eax, READ_CALL
     mov ebx, STDIN
-    mov ecx, entree_buffer
+    mov ecx, esi
     mov edx, taille_max_chaine
     int SYS_CALL
 
@@ -137,12 +144,12 @@ section .text
     jb error_too_short
 
     dec eax
-    mov BYTE [entree_buffer + eax], 0
+    mov BYTE [esi + eax], 0
 
     mov eax, 0 ; Si _readString réussit elle renvoie 0
     mov ecx, 0
 
-    lea esi, [entree_buffer] ; Charge la chaîne dans entree_buffer dans le registre esi
+    lea esi, [esi] ; Charge la chaîne dans entree_buffer dans le registre esi
 
     ; Boucle qui itère sur la chaîne de caracteres
     ; Elle s'arrete quand elle rencontre le caracteres de retour à la ligne

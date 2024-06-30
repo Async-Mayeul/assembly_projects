@@ -192,74 +192,62 @@ section .text
       ret
 
   _check_password:
-      push ebp
-      mov ebp, esp
+    push ebp
+    mov ebp, esp
 
-      mov ecx, 4
-      loop_check_pwd:
-        push ecx
-        lea esi, [mot_de_passe]
-        call _size_of_string
-        mov edx, ecx
-        push edx
-        lea esi, [entree_buffer]
-        call _size_of_string
-        pop edx
+    mov ecx, 4
+    loop_check_pwd:
+      push ecx
+      push edx
+      push eax
+      call _check_equal
+      cmp eax, 0
+      je right_pwd
+      pop eax
+      push eax
+      call _read_string
+      pop eax
+      call _invert_string
+      ;pop esi
+      ;pop edi
+      pop edx
+      pop ecx
 
-        cmp edx, ecx
-        jne wrong_pwd
+      loop loop_check_pwd
 
-        call _check_equal
-        cmp eax, 0
-        je right_pwd
-        call _readString
-        
-        call _invert_string
-        jmp end_loop
-
-        end_loop:
-          pop ecx
-          loop loop_check_pwd
-
-      mov eax, to_many_try
+    mov eax, to_many_try
+    call _display
+    jmp exit_check_pwd 
+    
+    right_pwd:
+      mov eax, msg_bon_pwd
       call _display
-      jmp exit_check_pwd 
-      
-      wrong_pwd:
-        mov eax, msg_mauvais_pwd
-        call _display
-        call _readString
-        jmp end_loop
+      jmp exit_check_pwd
 
-      right_pwd:
-        mov eax, msg_bon_pwd
-        call _display
-        jmp exit_check_pwd
+    exit_check_pwd:
+      mov esp, ebp
+      pop ebp
 
-      exit_check_pwd:
-        mov esp, ebp
-        pop ebp
-
-        ret
+      ret
 
   _check_equal:
     push ebp
     mov ebp, esp
 
-    lea esi, [entree_buffer]
-    lea edi, [mot_de_passe]
+    lea esi, [eax]
+    lea edi, [edx]
 
     loop:
       mov dl, [esi]
-      mov al, [edi]
+      mov bl, [edi]
 
       inc esi
       inc edi
 
-      cmp dl, al
+      cmp dl, bl
       jne char_not_equal
 
-      cmp al, 0
+      cmp bl, 0
       jne loop
 
     mov eax, 0
@@ -281,15 +269,14 @@ section .text
     push ebp
     mov ebp, esp
 
-    lea esi, [entree_buffer]
     call _size_of_string
     
     dec ecx
     mov edi, 0
-    mov dl, BYTE [entree_buffer + ecx]
-    mov al, BYTE [entree_buffer + edi]
-    mov BYTE [entree_buffer + edi], dl
-    mov BYTE [entree_buffer + ecx], al
+    mov dl, BYTE [eax + ecx]
+    mov bl, BYTE [eax + edi]
+    mov BYTE [eax + edi], dl
+    mov BYTE [eax + ecx], bl
 
     loop_invert:
       inc edi
@@ -298,10 +285,10 @@ section .text
       je exit_invert_string
       cmp ecx, edi
       jb exit_invert_string
-      mov dl, BYTE [entree_buffer + ecx]
-      mov al, BYTE [entree_buffer + edi]
-      mov BYTE [entree_buffer + edi], dl
-      mov BYTE [entree_buffer + ecx], al
+      mov dl, BYTE [eax + ecx]
+      mov bl, BYTE [eax + edi]
+      mov BYTE [eax + edi], dl
+      mov BYTE [eax + ecx], bl
       jmp loop_invert
 
     exit_invert_string:
@@ -314,6 +301,7 @@ section .text
     push ebp
     mov ebp, esp
     
+    lea esi, [eax]
     mov ecx, 0
 
     loop_size:

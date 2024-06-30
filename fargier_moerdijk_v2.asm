@@ -217,6 +217,7 @@ section .text
   _check_special_char:
     push ebp
     mov ebp, esp
+    mov eax, 0
 
     cmp dl, 0x41 ; 41 représente un A en ASCII
     jb error_special_char ; Si le caractere entree est inférieur à 41 ce n'est pas une lettre
@@ -241,7 +242,6 @@ section .text
       jmp exit_check_spe_char
 
     exit_check_spe_char:
-      mov eax, 0 ; _check_special_char renvoie 0 dans eax en cas de réussite
       mov esp, ebp
       pop ebp
 

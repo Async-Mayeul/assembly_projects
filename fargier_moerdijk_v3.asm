@@ -53,12 +53,17 @@ section .text
     mov eax, message ; Appel de la fonction _display pour afficher les messages
     call _display ; eax contient la chaîne qui va être utilisé par print_string
 
-    call _readString
+    push entree_buffer
+    call _read_string
 
     cmp eax, 0 ; _readString renvoie 0 dans le registre eax en cas de réussite sinon elle renvoie 1
     jne exit_start
     
+    push entree_buffer
     call _invert_string
+
+    push mot_de_passe ;2 argument
+    push entree_buffer ;1 argument
     call _check_password
     
     ; Bloc d'instructions pour sortir du programme
@@ -83,14 +88,16 @@ section .text
     push ebp
     mov ebp, esp
 
-    cmp dl, 41 ; 41 représente un A en ASCII
+    mov eax, 0
+
+    cmp dl, 0x41 ; 41 représente un A en ASCII
     jb error_special_char ; Si le caractere entree est inférieur à 41 ce n'est pas une lettre
     cmp dl, 0x5a ; 0x5a représente Z en ASCII
     ja check_min_maj ; jump pour vérifier si le caractere est dans les miniscules
     jmp continue
 
     check_min_maj:
-      cmp dl, 61 ; 61 représente a en ASCII
+      cmp dl, 0x61 ; 61 représente a en ASCII
       jb error_special_char ; Si le caractere est ni dans les majuscules ni dans les miniscules alors ce n'est pas une lettre
       jmp continue
 
@@ -106,19 +113,18 @@ section .text
       jmp exit_check_spe_char
 
     exit_check_spe_char:
-      mov eax, 0 ; _check_special_char renvoie 0 dans eax en cas de réussite
       mov esp, ebp
       pop ebp
 
       ret
 
-  _readString:
+  _read_string:
     push ebp
     mov ebp, esp
 
     mov eax, READ_CALL
     mov ebx, STDIN
-    mov ecx, entree_buffer
+    mov ecx, [ebp+8]
     mov edx, taille_max_chaine
     int SYS_CALL
 
@@ -128,12 +134,11 @@ section .text
     jb error_too_short
 
     dec eax
-    mov BYTE [entree_buffer + eax], 0
+    mov esi, [ebp+8]
+    mov BYTE [esi + eax], 0
 
     mov eax, 0 ; Si _readString réussit elle renvoie 0
     mov ecx, 0
-
-    lea esi, [entree_buffer] ; Charge la chaîne dans entree_buffer dans le registre esi
 
     ; Boucle qui itère sur la chaîne de caracteres
     ; Elle s'arrete quand elle rencontre le caracteres de retour à la ligne
@@ -173,19 +178,26 @@ section .text
       mov esp, ebp
       pop ebp
 
-      ret
+      ret 8
 
   _check_password:
       push ebp
       mov ebp, esp
-
-      mov ecx, 5
+      
+      mov esi, [ebp+8]
+      mov edi, [ebp+12]
+      mov ecx, 4
       loop_check_pwd:
-        push ecx
+        push esi
+        push edi
         call _check_equal
         cmp eax, 0
         je right_pwd
-        call _readString
+        push ecx
+        push esi ;entree_buffer
+        call _read_string
+        push ecx
+        push esi ;entree_buffer
         call _invert_string
         pop ecx
 
@@ -204,14 +216,14 @@ section .text
         mov esp, ebp
         pop ebp
 
-        ret
+        ret 12
 
   _check_equal:
     push ebp
     mov ebp, esp
 
-    lea esi, [entree_buffer]
-    lea edi, [mot_de_passe]
+    mov esi, [ebp+8]
+    mov edi, [ebp+12]
 
     loop:
       mov dl, [esi]
@@ -244,14 +256,16 @@ section .text
   _invert_string:
     push ebp
     mov ebp, esp
+    push entree_buffer
     call _size_of_string
     
     dec ecx
+    mov esi, [ebp+8]
     mov edi, 0
-    mov dl, BYTE [entree_buffer + ecx]
-    mov al, BYTE [entree_buffer + edi]
-    mov BYTE [entree_buffer + edi], dl
-    mov BYTE [entree_buffer + ecx], al
+    mov dl, BYTE [esi + ecx]
+    mov al, BYTE [esi + edi]
+    mov BYTE [esi + edi], dl
+    mov BYTE [esi + ecx], al
 
     loop_invert:
       inc edi
@@ -260,23 +274,23 @@ section .text
       je exit_invert_string
       cmp ecx, edi
       jb exit_invert_string
-      mov dl, BYTE [entree_buffer + ecx]
-      mov al, BYTE [entree_buffer + edi]
-      mov BYTE [entree_buffer + edi], dl
-      mov BYTE [entree_buffer + ecx], al
+      mov dl, BYTE [esi + ecx]
+      mov al, BYTE [esi + edi]
+      mov BYTE [esi + edi], dl
+      mov BYTE [esi + ecx], al
       jmp loop_invert
 
     exit_invert_string:
       mov esp, ebp
       pop ebp
 
-      ret
+      ret 12
 
   _size_of_string:
     push ebp
     mov ebp, esp
     
-    lea esi, [entree_buffer]
+    mov esi, [ebp+8]
     mov ecx, 0
 
     loop_size:
@@ -291,4 +305,4 @@ section .text
     mov esp, ebp
     pop ebp
 
-    ret
+    ret 8

@@ -74,7 +74,7 @@ section .text
     mov eax, message ; Appel de la fonction _display pour afficher les messages
     call _display ; eax contient la chaîne qui va être utilisé par print_string
 
-    push entree_buffer ; On passe entree_buffer comme argument de la fonction _read_string par la pile, elle servira aussi pour la fonction _check_password 
+    mov eax, entree_buffer ; On passe entree_buffer comme argument de la fonction _read_string par eax 
     call _read_string ; appel de la fonction _read_string
 
     cmp eax, 0 ; _read_string renvoie 0 dans le registre eax en cas de réussite sinon elle renvoie 1

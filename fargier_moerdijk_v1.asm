@@ -96,7 +96,8 @@ section .text
   ; des lettres. _read_string vérifie aussi la taille de la chaîne à l'aide du registre eax qui contient la taille de la saisie après l'appel système READ.
   ; Retour : eax --> 0 ou 1. 0 si la fonction réussit, 1 si elle faillit.
   _read_string:
-    ENTER
+    push ebp
+    mov ebp, esp
 
   ; Appel système READ
   ;-------------------------------
@@ -149,7 +150,8 @@ section .text
 
     ; sortie de la fonction _read_string
     exit_read_string:
-      LEAVE
+      mov esp, ebp
+      pop ebp
 
       ret
 
@@ -159,7 +161,8 @@ section .text
   ; est bien une lettre. Pour cela elle utilise les valeurs hexadecimal de la table ASCII pour vérifier si la valeur
   ; hexadecimal du caractere dans dl est bien comprise dans les intervalles des lettres dans la table ASCII.
   _check_special_char:
-    ENTER
+    push ebp
+    mov ebp, esp
 
     cmp dl, 0x41 ; 41 représente un 'A' en ASCII
     jl error_special_char ; Si le caractere entree est inférieur à 41 ce n'est pas une lettre
@@ -184,6 +187,7 @@ section .text
       jmp exit_check_char
 
     exit_check_char:
-      LEAVE
+      mov esp, ebp
+      pop ebp
 
       ret

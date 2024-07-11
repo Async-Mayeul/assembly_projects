@@ -1,3 +1,7 @@
+## Préréquis
+Vous avez besoin de NASM pour pouvoir compiler ces programmes.
+Les programmes suivant sont écrits en langage d'assemblage NASM pour des CPU avec une architecture x86.
+
 ## Compilation
 Pour compiler les programmes, il faut simplement lancer le script COMPILATION.sh [numero_version] en argument.
 
